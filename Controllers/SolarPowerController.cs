@@ -41,14 +41,22 @@ namespace SolarPowerMonitoringApi.Controllers
             var plant = await _context.SolarPowerPlants
                 .Include(p => p.ProductionRecords)
                 .FirstOrDefaultAsync(p => p.Id == id);
-            if (plant == null) return NotFound();
+            
+            if (plant == null)
+            {
+                return NotFound();
+            }
+
             return Ok(plant);
         }
 
         [HttpPost]
         public async Task<IActionResult> CreatePlant([FromBody] SolarPowerPlant plant)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+            { 
+                return BadRequest(ModelState); 
+            }
             _context.SolarPowerPlants.Add(plant);
             await _context.SaveChangesAsync();
             return Ok(plant);
@@ -57,28 +65,67 @@ namespace SolarPowerMonitoringApi.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePlant(int id, [FromBody] SolarPowerPlant updatedPlant)
         {
-            if (id != updatedPlant.Id) return BadRequest("ID mismatch.");
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (id != updatedPlant.Id) 
+            { 
+                return BadRequest("ID mismatch."); 
+            }
+
+            if (!ModelState.IsValid) 
+            { 
+                return BadRequest(ModelState); 
+            }
 
             var plant = await _context.SolarPowerPlants.FindAsync(id);
-            if (plant == null) return NotFound();
+            if (plant == null)
+            {
+                return NotFound();
+            }
 
             plant.Name = updatedPlant.Name;
             plant.InstalledPower = updatedPlant.InstalledPower;
             plant.DateOfInstallation = updatedPlant.DateOfInstallation;
             plant.Latitude = updatedPlant.Latitude;
             plant.Longitude = updatedPlant.Longitude;
-            // etc.
 
             await _context.SaveChangesAsync();
             return Ok(plant);
+        }
+
+        [HttpPut("{plantId}/productionrecords/{productionRecordId}")]
+        public async Task<IActionResult> UpdatePlantProductionRecords(int plantId, int productionRecordId, [FromBody] ProductionRecord updatedRecord)
+        {
+            var plant = await _context.SolarPowerPlants
+                .Include(p => p.ProductionRecords)
+                .FirstOrDefaultAsync(p => p.Id == plantId);
+            
+            if (plant == null)
+            {
+                return NotFound();
+            }
+
+            var existingRecord = plant.ProductionRecords.FirstOrDefault(r => r.Id == productionRecordId);
+            
+            if (existingRecord == null)
+            {
+                return NotFound();
+            }
+
+            existingRecord.Timestamp = updatedRecord.Timestamp;
+            existingRecord.Value = updatedRecord.Value;
+            existingRecord.IsForecast = updatedRecord.IsForecast;
+
+            await _context.SaveChangesAsync();
+            return Ok(existingRecord);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePlant(int id)
         {
             var plant = await _context.SolarPowerPlants.FindAsync(id);
-            if (plant == null) return NotFound();
+            if (plant == null)
+            {
+                return NotFound();
+            }
 
             _context.SolarPowerPlants.Remove(plant);
             await _context.SaveChangesAsync();
