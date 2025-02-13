@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SolarMonitoringAPI.Data;
+using SolarPowerMonitoringApi.Data.DTOs;
 using SolarPowerMonitoringApi.Data.Models;
 
 namespace SolarPowerMonitoringApi.Controllers
@@ -51,19 +52,22 @@ namespace SolarPowerMonitoringApi.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreatePlant([FromBody] SolarPowerPlant plant)
+        public async Task<IActionResult> CreatePlant([FromBody] SolarPowerPlantDto newPlantDto)
         {
             if (!ModelState.IsValid)
-            { 
-                return BadRequest(ModelState); 
+            {
+                return BadRequest(ModelState);
             }
-            _context.SolarPowerPlants.Add(plant);
+
+            SolarPowerPlant newPlant = MapToSolarPowerPlant(newPlantDto);
+
+            _context.SolarPowerPlants.Add(newPlant);
             await _context.SaveChangesAsync();
-            return Ok(plant);
+            return Ok(newPlant);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdatePlant(int id, [FromBody] SolarPowerPlant updatedPlant)
+        public async Task<IActionResult> UpdatePlant(int id, [FromBody] SolarPowerPlantDto updatedPlant)
         {
             if (id != updatedPlant.Id) 
             { 
@@ -92,7 +96,7 @@ namespace SolarPowerMonitoringApi.Controllers
         }
 
         [HttpPut("{plantId}/productionrecords/{productionRecordId}")]
-        public async Task<IActionResult> UpdatePlantProductionRecords(int plantId, int productionRecordId, [FromBody] ProductionRecord updatedRecord)
+        public async Task<IActionResult> UpdatePlantProductionRecords(int plantId, int productionRecordId, [FromBody] ProductionRecordDto updatedRecord)
         {
             var plant = await _context.SolarPowerPlants
                 .Include(p => p.ProductionRecords)
@@ -130,6 +134,18 @@ namespace SolarPowerMonitoringApi.Controllers
             _context.SolarPowerPlants.Remove(plant);
             await _context.SaveChangesAsync();
             return Ok($"Solar power plant with ID {id} was deleted successfully.");
+        }
+
+        private static SolarPowerPlant MapToSolarPowerPlant(SolarPowerPlantDto newPlantDto)
+        {
+            return new SolarPowerPlant
+            {
+                Name = newPlantDto.Name,
+                InstalledPower = newPlantDto.InstalledPower,
+                DateOfInstallation = newPlantDto.DateOfInstallation,
+                Latitude = newPlantDto.Latitude,
+                Longitude = newPlantDto.Longitude
+            };
         }
     }
 }
